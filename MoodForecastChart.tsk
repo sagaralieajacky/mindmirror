@@ -1,0 +1,106 @@
+import React from 'react';
+import { Line } from 'react-chartjs-2';
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  Title,
+  Tooltip,
+  Legend,
+} from 'chart.js';
+import { MoodForecast } from '../types';
+
+ChartJS.register(
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  Title,
+  Tooltip,
+  Legend
+);
+
+interface MoodForecastChartProps {
+  forecast: MoodForecast[];
+}
+
+const MoodForecastChart: React.FC<MoodForecastChartProps> = ({ forecast }) => {
+  const formatDate = (date: Date) => {
+    return date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+  };
+
+  const data = {
+    labels: forecast.map(item => formatDate(item.date)),
+    datasets: [
+      {
+        label: 'Mood Prediction',
+        data: forecast.map(item => item.prediction),
+        fill: false,
+        backgroundColor: 'rgba(var(--primary), 1)',
+        borderColor: 'rgba(var(--primary), 0.7)',
+        tension: 0.4,
+        pointBackgroundColor: 'rgba(var(--primary), 1)',
+        pointBorderColor: '#fff',
+        pointBorderWidth: 2,
+        pointRadius: 5,
+        pointHoverRadius: 7,
+      },
+    ],
+  };
+
+  const options = {
+    scales: {
+      y: {
+        min: 0,
+        max: 10,
+        ticks: {
+          stepSize: 1,
+          callback: function(value: any) {
+            if (value === 0) return 'Low';
+            if (value === 5) return 'Neutral';
+            if (value === 10) return 'High';
+            return value;
+          }
+        },
+        grid: {
+          display: true,
+          color: 'rgba(0, 0, 0, 0.05)',
+        },
+      },
+      x: {
+        grid: {
+          display: false,
+        },
+      },
+    },
+    plugins: {
+      legend: {
+        display: false,
+      },
+      tooltip: {
+        callbacks: {
+          afterLabel: function(context: any) {
+            const index = context.dataIndex;
+            const factors = forecast[index].factors;
+            return `Factors: ${factors.join(', ')}`;
+          }
+        }
+      }
+    },
+    responsive: true,
+    maintainAspectRatio: false,
+  };
+
+  return (
+    <div className="card h-80">
+      <h3 className="text-xl font-serif mb-4">Mood Forecast</h3>
+      <div className="h-64">
+        <Line data={data} options={options} />
+      </div>
+    </div>
+  );
+};
+
+export default MoodForecastChart;
