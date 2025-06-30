@@ -1,0 +1,49 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --primary: 255, 107, 129;
+  --secondary: 69, 39, 160;
+  --accent: 250, 176, 5;
+  --background: 249, 250, 251;
+  --foreground: 17, 24, 39;
+}
+
+body {
+  font-family: 'Inter', sans-serif;
+  @apply bg-background text-foreground;
+}
+
+h1, h2, h3, h4, h5 {
+  font-family: 'Playfair Display', serif;
+}
+
+.gradient-text {
+  @apply bg-clip-text text-transparent bg-gradient-to-r from-primary to-secondary;
+}
+
+.btn-primary {
+  @apply px-6 py-3 bg-primary text-white rounded-full font-medium shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105;
+}
+
+.btn-secondary {
+  @apply px-6 py-3 bg-white text-primary border border-primary rounded-full font-medium shadow-md hover:shadow-lg transition-all duration-300;
+}
+
+.card {
+  @apply bg-white rounded-xl shadow-md p-6 hover:shadow-lg transition-all duration-300;
+}
+
+.glass-card {
+  @apply bg-white/80 backdrop-blur-md rounded-xl shadow-lg p-6;
+}
+
+.recording-pulse {
+  @apply relative;
+}
+
+.recording-pulse::before {
+  content: '';
+  @apply absolute inset-0 rounded-full bg-primary/20 animate-ping;
+}
