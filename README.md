@@ -6,11 +6,6 @@ MindMirror is a voice- and text-based AI companion that helps users reflect on t
 
 ---
 
-## 🚀 Live Demo
-👉 [Try MindMirror](https://your-demo-link.com) *(Replace with actual URL)*
-
----
-
 ## 🧩 Features
 
 - ✍️ Voice & Text Journaling  
