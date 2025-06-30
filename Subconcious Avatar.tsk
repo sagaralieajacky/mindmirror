@@ -1,0 +1,138 @@
+import React from 'react';
+import { motion } from 'framer-motion';
+import { Brain, Heart, Zap, Cloud, Sun, Moon } from 'lucide-react';
+
+interface SubconsciousAvatarProps {
+  primaryEmotion: string;
+  emotionIntensity: number;
+}
+
+const SubconsciousAvatar: React.FC<SubconsciousAvatarProps> = ({ 
+  primaryEmotion, 
+  emotionIntensity 
+}) => {
+  // Map emotions to colors and icons
+  const getEmotionDetails = (emotion: string) => {
+    const emotionMap: Record<string, { color: string, icon: React.ReactNode }> = {
+      anxiety: { 
+        color: 'from-red-400 to-orange-300', 
+        icon: <Zap className="text-white\" size={24} /> 
+      },
+      'self-doubt': { 
+        color: 'from-purple-400 to-indigo-300', 
+        icon: <Cloud className="text-white" size={24} /> 
+      },
+      contentment: { 
+        color: 'from-blue-400 to-cyan-300', 
+        icon: <Sun className="text-white\" size={24} /> 
+      },
+      pride: { 
+        color: 'from-green-400 to-emerald-300', 
+        icon: <Heart className="text-white" size={24} /> 
+      },
+      uncertainty: { 
+        color: 'from-yellow-400 to-amber-300', 
+        icon: <Moon className="text-white\" size={24} /> 
+      },
+      restlessness: { 
+        color: 'from-orange-400 to-amber-300', 
+        icon: <Zap className="text-white" size={24} /> 
+      },
+    };
+    
+    return emotionMap[emotion.toLowerCase()] || { 
+      color: 'from-gray-400 to-gray-300', 
+      icon: <Brain className="text-white\" size={24} /> 
+    };
+  };
+  
+  const { color, icon } = getEmotionDetails(primaryEmotion);
+  
+  // Calculate animation speed based on emotion intensity
+  const animationDuration = 7 - (emotionIntensity * 0.4); // faster for higher intensity
+  
+  return (
+    <div className="card flex flex-col items-center p-6">
+      <h3 className="text-xl font-serif mb-6">Your Mind Mirror</h3>
+      
+      <div className="relative mb-6">
+        <motion.div
+          className={`w-32 h-32 rounded-full bg-gradient-to-br ${color} flex items-center justify-center shadow-lg`}
+          animate={{
+            scale: [1, 1.05, 1],
+          }}
+          transition={{
+            duration: animationDuration,
+            repeat: Infinity,
+            ease: "easeInOut",
+          }}
+        >
+          <motion.div
+            animate={{ rotate: 360 }}
+            transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
+            className="absolute inset-0 rounded-full overflow-hidden"
+          >
+            <div className="w-full h-full bg-white/10 backdrop-blur-sm"></div>
+          </motion.div>
+          
+          {icon}
+        </motion.div>
+        
+        {/* Orbiting elements */}
+        <motion.div
+          className="absolute"
+          animate={{
+            rotate: 360,
+          }}
+          transition={{
+            duration: 15,
+            repeat: Infinity,
+            ease: "linear",
+          }}
+          style={{ width: '140px', height: '140px', top: '50%', left: '50%', marginLeft: '-70px', marginTop: '-70px' }}
+        >
+          <motion.div
+            className="absolute bg-white/80 w-6 h-6 rounded-full shadow-md flex items-center justify-center"
+            style={{ left: '50%', marginLeft: '-12px', top: '-12px' }}
+          >
+            <Heart size={12} className="text-primary" />
+          </motion.div>
+        </motion.div>
+        
+        <motion.div
+          className="absolute"
+          animate={{
+            rotate: -360,
+          }}
+          transition={{
+            duration: 20,
+            repeat: Infinity,
+            ease: "linear",
+          }}
+          style={{ width: '160px', height: '160px', top: '50%', left: '50%', marginLeft: '-80px', marginTop: '-80px' }}
+        >
+          <motion.div
+            className="absolute bg-white/80 w-8 h-8 rounded-full shadow-md flex items-center justify-center"
+            style={{ left: '50%', marginLeft: '-16px', top: '-16px' }}
+          >
+            <Brain size={16} className="text-secondary" />
+          </motion.div>
+        </motion.div>
+      </div>
+      
+      <div className="text-center">
+        <h4 className="font-medium text-lg mb-1">Current State</h4>
+        <p className="text-gray-600 mb-3">Predominantly {primaryEmotion}</p>
+        <div className="w-full bg-gray-200 rounded-full h-2 mb-1">
+          <div 
+            className={`h-2 rounded-full bg-gradient-to-r ${color}`} 
+            style={{ width: `${emotionIntensity * 10}%` }}
+          ></div>
+        </div>
+        <p className="text-xs text-gray-500">Intensity: {emotionIntensity}/10</p>
+      </div>
+    </div>
+  );
+};
+
+export default SubconsciousAvatar;
