@@ -1,0 +1,280 @@
+import React, { useState, useRef, useEffect } from 'react';
+import { Send, Loader2, Brain, Sparkles, AlertCircle } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { format } from 'date-fns';
+import ReactMarkdown from 'react-markdown';
+import axios from 'axios';
+import useSWR from 'swr';
+
+interface Message {
+  id: string;
+  content: string;
+  type: 'user' | 'assistant';
+  timestamp: Date;
+  analysis?: {
+    emotions: string[];
+    themes: string[];
+    sentiment: number;
+    suggestions?: string[];
+    insights?: string;
+  };
+}
+
+interface DailyInsight {
+  quote: string;
+  theme: string;
+  suggestion: string;
+}
+
+const fetcher = (url: string) => axios.get(url).then(res => res.data);
+
+const ChatInterface: React.FC = () => {
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [input, setInput] = useState('');
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
+
+  // Fetch daily insights
+  const { data: dailyInsight } = useSWR<DailyInsight>(
+    'https://api.mindmirror.ai/daily-insights',
+    fetcher,
+    {
+      refreshInterval: 86400000, // Refresh every 24 hours
+      fallbackData: {
+        quote: "The mind is like water. When it's turbulent, it's difficult to see. When it's calm, everything becomes clear.",
+        theme: "mindfulness",
+        suggestion: "Take a moment to breathe and center yourself"
+      }
+    }
+  );
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
+
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages]);
+
+  const getMockAnalysis = (text: string) => {
+    // Simple sentiment analysis based on positive/negative word counts
+    const positiveWords = ['happy', 'good', 'great', 'awesome', 'love', 'wonderful', 'excited'];
+    const negativeWords = ['sad', 'bad', 'terrible', 'hate', 'angry', 'upset', 'worried'];
+    
+    const words = text.toLowerCase().split(/\s+/);
+    const positiveCount = words.filter(word => positiveWords.includes(word)).length;
+    const negativeCount = words.filter(word => negativeWords.includes(word)).length;
+    
+    const sentiment = (positiveCount - negativeCount) / words.length;
+
+    // Generate mock emotions based on text length and sentiment
+    const emotions = sentiment > 0 
+      ? ['optimistic', 'content'] 
+      : sentiment < 0 
+        ? ['concerned', 'reflective']
+        : ['contemplative', 'neutral'];
+
+    // Generate mock themes based on text length
+    const themes = words.length > 20 
+      ? ['self-reflection', 'personal growth']
+      : ['daily life', 'mindfulness'];
+
+    return {
+      emotions,
+      themes,
+      sentiment,
+      suggestions: ['Consider journaling about this topic more frequently'],
+      insights: 'Your response shows a thoughtful engagement with your inner experience. Taking time to reflect like this can lead to valuable personal insights.'
+    };
+  };
+
+  const analyzeText = async (text: string) => {
+    setIsAnalyzing(true);
+    
+    try {
+      // Simulate API delay
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      
+      const mockResponse = getMockAnalysis(text);
+      const assistantResponse = generateAssistantResponse(text, mockResponse);
+      
+      setMessages(prev => [...prev, {
+        id: Date.now().toString(),
+        content: assistantResponse,
+        type: 'assistant',
+        timestamp: new Date(),
+        analysis: mockResponse
+      }]);
+    } catch (error) {
+      console.error('Analysis error:', error);
+      setMessages(prev => [...prev, {
+        id: Date.now().toString(),
+        content: "I apologize, but I'm having trouble analyzing your message right now. Would you like to try again?",
+        type: 'assistant',
+        timestamp: new Date()
+      }]);
+    } finally {
+      setIsAnalyzing(false);
+    }
+  };
+
+  const generateAssistantResponse = (text: string, analysis: any) => {
+    const responses = [
+      `I notice some interesting patterns in your thoughts. Your emotional tone suggests ${analysis.emotions[0]} and ${analysis.emotions[1]} feelings. The themes of ${analysis.themes[0]} and ${analysis.themes[1]} are particularly prominent.\n\n${analysis.insights}\n\nSuggested reflection: How do these insights resonate with your current life situation?`,
+      `Thank you for sharing. I've detected a ${analysis.sentiment > 0 ? 'positive' : 'challenging'} emotional undertone. Your words reveal themes of ${analysis.themes.join(' and ')}.\n\n${analysis.insights}\n\nWould you like to explore any of these themes further?`,
+      `I'm picking up on some meaningful patterns. Your expression shows ${analysis.emotions[0]} energy, with undertones of ${analysis.emotions[1]}. Let's explore how these emotions connect to your current experiences.\n\n${analysis.insights}`
+    ];
+    
+    return responses[Math.floor(Math.random() * responses.length)];
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!input.trim()) return;
+
+    const userMessage = {
+      id: Date.now().toString(),
+      content: input,
+      type: 'user' as const,
+      timestamp: new Date()
+    };
+
+    setMessages(prev => [...prev, userMessage]);
+    setInput('');
+    await analyzeText(input);
+  };
+
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSubmit(e);
+    }
+  };
+
+  return (
+    <div className="flex flex-col h-[600px] card">
+      <div className="flex items-center justify-between p-4 border-b">
+        <div className="flex items-center">
+          <Brain className="text-primary mr-2" size={24} />
+          <h2 className="text-xl font-serif">MindMirror Chat</h2>
+        </div>
+        {messages.length > 0 && (
+          <button 
+            className="text-sm text-primary hover:text-primary/80 transition-colors"
+            onClick={() => setMessages([])}
+          >
+            Clear Chat
+          </button>
+        )}
+      </div>
+
+      <div className="flex-1 overflow-y-auto p-4 space-y-4">
+        {messages.length === 0 ? (
+          <div className="text-center text-gray-500 mt-8">
+            <Sparkles className="mx-auto mb-4\" size={32} />
+            <p className="text-lg mb-2">Welcome to MindMirror</p>
+            <p className="text-sm mb-6">Share your thoughts, and I'll help you explore their deeper meaning.</p>
+            
+            {dailyInsight && (
+              <div className="mt-8 p-6 bg-gradient-to-r from-primary/5 to-secondary/5 rounded-lg">
+                <h3 className="text-lg font-serif mb-2">Today's Reflection</h3>
+                <p className="italic text-gray-600 mb-4">"{dailyInsight.quote}"</p>
+                <p className="text-sm text-gray-500">Theme: {dailyInsight.theme}</p>
+                <p className="text-sm text-primary mt-2">{dailyInsight.suggestion}</p>
+              </div>
+            )}
+          </div>
+        ) : (
+          <AnimatePresence>
+            {messages.map((message) => (
+              <motion.div
+                key={message.id}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                className={`flex ${message.type === 'user' ? 'justify-end' : 'justify-start'}`}
+              >
+                <div 
+                  className={`max-w-[80%] rounded-lg p-4 ${
+                    message.type === 'user' 
+                      ? 'bg-primary text-white' 
+                      : 'bg-gray-100'
+                  }`}
+                >
+                  <ReactMarkdown 
+                    className="prose prose-sm max-w-none"
+                    components={{
+                      p: ({node, ...props}) => <p className="mb-2 last:mb-0" {...props} />
+                    }}
+                  >
+                    {message.content}
+                  </ReactMarkdown>
+                  <div className="text-xs mt-2 opacity-70">
+                    {format(message.timestamp, 'HH:mm')}
+                  </div>
+                  
+                  {message.analysis && (
+                    <div className="mt-3 pt-3 border-t border-gray-200">
+                      <div className="flex flex-wrap gap-2 mb-2">
+                        {message.analysis.emotions.map((emotion, i) => (
+                          <span 
+                            key={i}
+                            className="px-2 py-1 rounded-full bg-white/10 text-xs"
+                          >
+                            {emotion}
+                          </span>
+                        ))}
+                      </div>
+                      {message.analysis.suggestions && (
+                        <div className="mt-2 text-sm">
+                          <strong>Suggestion:</strong>{' '}
+                          {message.analysis.suggestions[0]}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </motion.div>
+            ))}
+          </AnimatePresence>
+        )}
+        <div ref={messagesEndRef} />
+      </div>
+
+      <form onSubmit={handleSubmit} className="p-4 border-t">
+        <div className="relative">
+          <textarea
+            ref={inputRef}
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            onKeyPress={handleKeyPress}
+            placeholder="Share your thoughts..."
+            className="w-full pr-12 pl-4 py-3 rounded-lg border border-gray-300 focus:border-primary focus:ring focus:ring-primary/20 focus:ring-opacity-50 resize-none"
+            rows={2}
+            disabled={isAnalyzing}
+          />
+          <button
+            type="submit"
+            disabled={isAnalyzing || !input.trim()}
+            className="absolute right-2 bottom-2 p-2 text-primary hover:text-primary/80 disabled:text-gray-400 transition-colors"
+          >
+            {isAnalyzing ? (
+              <Loader2 className="animate-spin\" size={20} />
+            ) : (
+              <Send size={20} />
+            )}
+          </button>
+        </div>
+        {isAnalyzing && (
+          <div className="text-sm text-gray-500 mt-2 flex items-center">
+            <Loader2 className="animate-spin mr-2" size={14} />
+            Analyzing your thoughts...
+          </div>
+        )}
+      </form>
+    </div>
+  );
+};
+
+export default ChatInterface;
