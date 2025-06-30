@@ -1,0 +1,63 @@
+import React from 'react';
+import { motion } from 'framer-motion';
+import { ThemeAnalysis } from '../types';
+
+interface ThemeCloudProps {
+  themes: ThemeAnalysis[];
+}
+
+const ThemeCloud: React.FC<ThemeCloudProps> = ({ themes }) => {
+  // Sort themes by weight
+  const sortedThemes = [...themes].sort((a, b) => b.weight - a.weight);
+  
+  // Calculate font size based on weight (min 14px, max 32px)
+  const getFontSize = (weight: number) => {
+    return 14 + (weight / 10) * 18;
+  };
+  
+  // Get a color based on theme name (for consistency)
+  const getColor = (name: string) => {
+    const colors = [
+      'text-primary',
+      'text-secondary',
+      'text-accent',
+      'text-blue-500',
+      'text-purple-500',
+      'text-green-500',
+      'text-yellow-500',
+      'text-indigo-500',
+      'text-pink-500',
+      'text-teal-500',
+    ];
+    
+    // Use the sum of character codes to determine a consistent color
+    const charSum = name.split('').reduce((sum, char) => sum + char.charCodeAt(0), 0);
+    return colors[charSum % colors.length];
+  };
+
+  return (
+    <div className="card h-80 overflow-hidden">
+      <h3 className="text-xl font-serif mb-4">Subconscious Themes</h3>
+      <div className="flex flex-wrap justify-center items-center h-64 gap-4 overflow-hidden">
+        {sortedThemes.map((theme, index) => (
+          <motion.div
+            key={theme.name}
+            className={`${getColor(theme.name)} font-medium cursor-pointer hover:opacity-80 transition-opacity`}
+            style={{ fontSize: `${getFontSize(theme.weight)}px` }}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ 
+              opacity: 1, 
+              y: 0,
+              transition: { delay: index * 0.1 }
+            }}
+            whileHover={{ scale: 1.1 }}
+          >
+            {theme.name}
+          </motion.div>
+        ))}
+      </div>
+    </div>
+  );
+};
+
+export default ThemeCloud;
